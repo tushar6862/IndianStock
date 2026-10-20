@@ -1,0 +1,82 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: dark;
+  --bg: #070b12;
+  --panel: #0e1624;
+  --panel-2: #121c2e;
+  --line: #24344c;
+  --text: #e7eef8;
+  --muted: #93a4bd;
+  --bull: #1fbf75;
+  --bear: #f05252;
+  --warn: #f5a524;
+  --accent: #5b9dff;
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #eef3f9;
+  --panel: #ffffff;
+  --panel-2: #f7f9fc;
+  --line: #d5dfec;
+  --text: #122033;
+  --muted: #52647c;
+  --bull: #0d8a52;
+  --bear: #d13434;
+  --warn: #b8750a;
+  --accent: #1d6fe0;
+  --shadow: 0 10px 30px rgba(18, 32, 51, 0.08);
+}
+
+@theme inline {
+  --font-sans: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-bull: var(--bull);
+  --color-bear: var(--bear);
+  --color-warn: var(--warn);
+  --color-accent: var(--accent);
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tabular {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
