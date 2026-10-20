@@ -14,7 +14,7 @@ export function FyersConnect() {
     void fetchFyersStatus()
       .then((status) => {
         setConnected(status.connected)
-        setRedirectUri(status.redirectUri)
+        if (status.redirectUri) setRedirectUri(status.redirectUri)
       })
       .catch(() => setError('Local FYERS server is not running. Start the app with npm run dev.'))
   }, [])
@@ -23,7 +23,10 @@ export function FyersConnect() {
     setError('')
     try {
       const next = await fetchFyersLoginUrl()
-      setRedirectUri(next.redirectUri)
+      if (next.redirectUri) setRedirectUri(next.redirectUri)
+      if (!next.url?.startsWith('https://')) {
+        throw new Error(next.url ? 'FYERS login URL was not valid.' : 'FYERS login did not return a URL. Check the server environment variables.')
+      }
       window.open(next.url, '_blank', 'noopener,noreferrer')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'FYERS login could not start.')

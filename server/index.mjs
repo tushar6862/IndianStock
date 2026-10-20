@@ -127,6 +127,9 @@ function publicOrigin(request) {
       // Fall through to the request host when the env value is not a URL.
     }
   }
+  if (typeof request.url === 'string' && request.url.startsWith('http')) {
+    return new URL(request.url).origin
+  }
   const forwardedHost = request.headers?.['x-forwarded-host'] || request.headers?.host || '127.0.0.1:5173'
   const host = String(forwardedHost).split(',')[0].trim()
   const forwardedProto = request.headers?.['x-forwarded-proto']
@@ -401,6 +404,40 @@ export async function handle(request, response) {
     const status = error.status || 500
     send(response, status, { message: error.message || 'FYERS server error.' })
   }
+}
+
+export async function handleWeb(webRequest) {
+  const nodeRequest = {
+    method: webRequest.method,
+    url: webRequest.url,
+    headers: Object.fromEntries(webRequest.headers.entries()),
+    body: webRequest.method === 'GET' || webRequest.method === 'HEAD' ? undefined : await webRequest.text(),
+  }
+  let status = 200
+  const headers = {}
+  const chunks = []
+  const nodeResponse = {
+    setHeader(name, value) {
+      headers[name.toLowerCase()] = value
+    },
+    writeHead(code, extra = {}) {
+      status = code
+      for (const [name, value] of Object.entries(extra)) headers[name.toLowerCase()] = value
+    },
+    end(body) {
+      if (body != null) chunks.push(body)
+    },
+  }
+  await handle(nodeRequest, nodeResponse)
+  const responseHeaders = new Headers()
+  for (const [name, value] of Object.entries(headers)) {
+    if (name === 'set-cookie' && Array.isArray(value)) {
+      for (const cookie of value) responseHeaders.append('set-cookie', cookie)
+    } else if (value != null) {
+      responseHeaders.set(name, Array.isArray(value) ? value.join(', ') : String(value))
+    }
+  }
+  return new Response(chunks.join(''), { status, headers: responseHeaders })
 }
 
 export function startServer() {

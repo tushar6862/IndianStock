@@ -28,9 +28,13 @@ export function fyersConnectionMessage(): ProviderStatus {
 }
 
 async function readJson<T>(response: Response): Promise<T> {
+  const type = response.headers.get('content-type') ?? ''
+  if (type.includes('text/html')) {
+    throw new Error('FYERS API is not available on this deploy yet. Wait for the new deploy, then try Login with FYERS again.')
+  }
   const payload = (await response.json().catch(() => ({}))) as T & { message?: string }
   if (!response.ok) {
-    throw new Error(payload.message || 'The local FYERS server did not accept the request.')
+    throw new Error(payload.message || 'The FYERS server did not accept the request.')
   }
   return payload
 }

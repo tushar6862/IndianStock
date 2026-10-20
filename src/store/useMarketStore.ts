@@ -147,7 +147,7 @@ export const useMarketStore = create<MarketState>()(
         const state = get()
         const selected = state.instrument
         if (state.origins.NIFTY50 === 'disconnected' && state.origins.SENSEX === 'disconnected') {
-          set({ banner: { tone: 'error', message: 'Nothing to refresh. Provider not connected.' } })
+          void state.loadFyers()
           return
         }
         if (state.origins[selected] === 'file') {

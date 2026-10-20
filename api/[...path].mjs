@@ -1,5 +1,7 @@
-import { handle } from '../server/index.mjs'
+import { handleWeb } from '../server/index.mjs'
 
-export default function handler(request, response) {
-  return handle(request, response)
+export default {
+  fetch(request) {
+    return handleWeb(request)
+  },
 }
