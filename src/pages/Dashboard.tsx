@@ -74,7 +74,9 @@ export function Dashboard() {
         ) : null}
         {selected.origin === 'fyers' ? (
           <p className="mb-3 rounded-md border border-bull/40 bg-bull/10 px-3 py-2 text-xs">
-            Chart is using FYERS {selected.freshness === 'live' ? 'live' : 'latest'} candles for {INSTRUMENTS[instrument].name}.
+            {selected.freshness === 'live'
+              ? `Live FYERS spot for ${INSTRUMENTS[instrument].name}. The candle and price move with each quote.`
+              : `Chart is using the latest FYERS candles for ${INSTRUMENTS[instrument].name}.`}
           </p>
         ) : null}
         {selected.candles.length === 0 ? (

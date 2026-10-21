@@ -58,6 +58,19 @@ export async function exchangeFyersCode(code: string): Promise<void> {
   await readJson(response)
 }
 
+export interface FyersQuoteRow {
+  quote: LiveQuote | null
+  freshness: Freshness
+  symbol?: string
+  sourceLabel?: string
+  message?: string
+}
+
+export async function fetchFyersQuotes(): Promise<Record<InstrumentId, FyersQuoteRow>> {
+  const response = await fetch('/api/market/quotes')
+  return readJson(response)
+}
+
 export async function fetchFyersCandles(instrument: InstrumentId): Promise<FyersCandleResult> {
   const response = await fetch(`/api/market/candles?instrument=${instrument}`)
   const payload = await readJson<{
@@ -67,7 +80,7 @@ export async function fetchFyersCandles(instrument: InstrumentId): Promise<Fyers
     sourceLabel: string
   }>(response)
   return {
-    candles: mergeQuote(payload.candles ?? [], payload.quote),
+    candles: mergeQuote(payload.candles ?? [], payload.quote, { live: payload.freshness === 'live' }),
     quote: payload.quote,
     freshness: payload.freshness,
     sourceLabel: payload.sourceLabel,

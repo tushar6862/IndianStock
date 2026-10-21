@@ -33,10 +33,25 @@ export function AppShell({ children }: { children: ReactNode }) {
         refreshing = false
       }
     }
+    const tick = async () => {
+      if (document.hidden || refreshing) return
+      const state = useMarketStore.getState()
+      if (state.origins.NIFTY50 !== 'fyers' && state.origins.SENSEX !== 'fyers') return
+      refreshing = true
+      try {
+        await state.applyTicks()
+      } catch {
+        // Keep the last spot on screen if one quote request fails.
+      } finally {
+        refreshing = false
+      }
+    }
     void sync(true)
-    const timer = window.setInterval(() => void sync(true), 20000)
+    const ticks = window.setInterval(() => void tick(), 1000)
+    const timer = window.setInterval(() => void sync(true), 60000)
     return () => {
       stop = true
+      window.clearInterval(ticks)
       window.clearInterval(timer)
     }
   }, [])

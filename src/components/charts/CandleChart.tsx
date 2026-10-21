@@ -167,15 +167,22 @@ export function CandleChart({
     const series = seriesRef.current
     if (!chart || !series || view.candles.length === 0) return
     const last = view.candles[view.candles.length - 1]
-    series.candle.setData(
-      view.candles.map((candle) => ({
-        time: candle.time as UTCTimestamp,
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-      })),
-    )
+    const identity = `${view.instrument}-${view.timeframe}-${view.candles[0]?.time}-${view.candles.length}`
+    const bar = {
+      time: last.time as UTCTimestamp,
+      open: last.open,
+      high: last.high,
+      low: last.low,
+      close: last.close,
+    }
+    if (fitKey.current === identity) series.candle.update(bar)
+    else series.candle.setData(view.candles.map((candle) => ({
+      time: candle.time as UTCTimestamp,
+      open: candle.open,
+      high: candle.high,
+      low: candle.low,
+      close: candle.close,
+    })))
     series.candle.applyOptions({ priceLineColor: last.close >= last.open ? '#1fbf75' : '#f05252' })
     series.vwap.setData(lineData(view, view.vwapSeries))
     series.emaFast.setData(lineData(view, view.emaFastSeries))

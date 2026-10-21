@@ -232,6 +232,17 @@ describe('sample data and providers', () => {
     expect(merged[0].high).toBe(12)
   })
 
+  it('prints a stale FYERS timestamp onto the current minute while the feed is live', () => {
+    const merged = mergeQuote(
+      [{ time: 1_700_000_040, open: 10, high: 11, low: 9, close: 10 }],
+      { price: 13, change: 1, changePercent: 1, time: 1_600_000_000 },
+      { live: true, now: 1_700_000_100 },
+    )
+    expect(merged).toHaveLength(2)
+    expect(merged[1].close).toBe(13)
+    expect(merged[1].time).toBe(1_700_000_100)
+  })
+
   it('parses a csv and skips a broken row', () => {
     const parsed = parseCandleFile(
       'time,open,high,low,close,volume\n1700000000,10,12,9,11,100\nbad,1,1,1,1\n',

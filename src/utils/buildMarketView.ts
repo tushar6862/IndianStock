@@ -45,6 +45,9 @@ export interface MarketView {
   timestamp: number | null
   loadedAt: number | null
   changeBasis: string
+  sessionOpen: number | null
+  sessionHigh: number | null
+  sessionLow: number | null
   emaFastSeries: Array<number | null>
   emaSlowSeries: Array<number | null>
   vwapSeries: Array<number | null>
@@ -175,6 +178,9 @@ export function buildMarketView(input: {
     origin: input.origin,
     freshness: input.candles.length === 0 ? 'unavailable' : (input.freshness ?? freshnessFor(input.origin)),
     changeBasis,
+    sessionOpen: quote?.open ?? last?.open ?? null,
+    sessionHigh: quote?.high ?? last?.high ?? null,
+    sessionLow: quote?.low ?? last?.low ?? null,
     sourceLabel: input.sourceLabel,
     candles: display.candles,
     resolutionNote: display.note,

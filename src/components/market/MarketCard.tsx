@@ -57,10 +57,10 @@ export function MarketCard({ view, selected, onSelect }: { view: MarketView; sel
         </div>
       </button>
       <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
-        <Field label="Open" value={formatNumber(last?.open)} />
-        <Field label="High" value={formatNumber(last?.high)} />
-        <Field label="Low" value={formatNumber(last?.low)} />
-        <Field label="Close" value={formatNumber(last?.close)} />
+        <Field label="Open" value={formatNumber(view.sessionOpen)} />
+        <Field label="High" value={formatNumber(view.sessionHigh)} />
+        <Field label="Low" value={formatNumber(view.sessionLow)} />
+        <Field label="Close" value={formatNumber(view.price ?? last?.close)} />
         <Field label="VWAP" value={formatNumber(view.vwap)} hint={view.vwapNote} />
         <Field label="EMA 9" value={formatNumber(view.emaFast)} />
         <Field label="EMA 21" value={formatNumber(view.emaSlow)} />

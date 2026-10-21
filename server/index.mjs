@@ -232,16 +232,33 @@ function candlesFromHistory(payload) {
     .sort((a, b) => a.time - b.time)
 }
 
+function finite(value) {
+  const number = Number(value)
+  return Number.isFinite(number) ? number : undefined
+}
+
 function quoteFrom(entry) {
   const values = entry?.v
   if (!values || !Number.isFinite(Number(values.lp))) return null
-  const time = Number(values.tt)
-  return {
+  const rawTime = Number(values.tt ?? values.ltt)
+  const quote = {
     price: Number(values.lp),
     change: Number(values.ch),
     changePercent: Number(values.chp),
-    time: Number.isFinite(time) ? (time > 1e12 ? Math.floor(time / 1000) : time) : Math.floor(Date.now() / 1000),
+    time: Number.isFinite(rawTime) ? (rawTime > 1e12 ? Math.floor(rawTime / 1000) : rawTime) : Math.floor(Date.now() / 1000),
   }
+  const open = finite(values.open_price ?? values.o)
+  const high = finite(values.high_price ?? values.h)
+  const low = finite(values.low_price ?? values.l)
+  if (open != null) quote.open = open
+  if (high != null) quote.high = high
+  if (low != null) quote.low = low
+  return quote
+}
+
+function freshnessOf(quote) {
+  if (!quote || !marketOpen()) return 'delayed'
+  return 'live'
 }
 
 async function historyFor(symbol, accessToken) {
@@ -274,14 +291,46 @@ async function loadSymbol(symbol, accessToken) {
     throw new Error(quoteRow.message || `${symbol} quote failed.`)
   }
   const quote = quoteFrom(quoteRow)
-  const fresh = marketOpen() && quote != null && Math.abs(Date.now() / 1000 - quote.time) < 180
   return {
     candles: candlesFromHistory(history),
     quote,
-    freshness: fresh ? 'live' : 'delayed',
+    freshness: freshnessOf(quote),
     sourceLabel: `FYERS · ${symbol}`,
     symbol,
   }
+}
+
+async function loadQuotes(accessToken) {
+  const requested = [
+    ['NIFTY50', symbols.NIFTY50],
+    ['SENSEX', symbols.SENSEX],
+  ]
+  const result = {}
+  await Promise.all(
+    requested.map(async ([id, candidates]) => {
+      let lastError = new Error('FYERS quote failed.')
+      for (const symbol of candidates) {
+        try {
+          const payload = await fyersGet(`/data/quotes?${new URLSearchParams({ symbols: symbol }).toString()}`, accessToken)
+          const row = Array.isArray(payload.d) ? payload.d.find((item) => item.n === symbol) ?? payload.d[0] : null
+          if (row?.s === 'error') throw new Error(row.message || `${symbol} quote failed.`)
+          const quote = quoteFrom(row)
+          if (!quote) throw new Error(`${symbol} did not include a price.`)
+          result[id] = { quote, freshness: freshnessOf(quote), symbol, sourceLabel: `FYERS · ${symbol}` }
+          return
+        } catch (error) {
+          lastError = error
+          if (error.status === 401) throw error
+        }
+      }
+      result[id] = { quote: null, freshness: 'delayed', message: lastError.message }
+    }),
+  )
+  if (!result.NIFTY50?.quote && !result.SENSEX?.quote) {
+    const error = new Error(result.NIFTY50?.message || 'FYERS quotes are unavailable.')
+    throw error
+  }
+  return result
 }
 
 async function loadInstrument(instrument, accessToken) {
@@ -391,6 +440,11 @@ export async function handle(request, response) {
         serializeCookie(tokenCookie, accessToken, { maxAge: 60 * 60 * 18, secure }),
         serializeCookie(stateCookie, '', { maxAge: 0, secure }),
       ])
+      return
+    }
+    if (request.method === 'GET' && url.pathname === '/api/market/quotes') {
+      const payload = await loadQuotes(accessTokenFrom(request))
+      send(response, 200, payload)
       return
     }
     if (request.method === 'GET' && url.pathname === '/api/market/candles') {

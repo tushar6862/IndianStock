@@ -31,6 +31,14 @@ export function MoveBoard({
   onSelect: (instrument: InstrumentId) => void
   disconnected: boolean
 }) {
+  const fyers = views.some((view) => view.origin === 'fyers')
+  const live = views.some((view) => view.origin === 'fyers' && view.freshness === 'live')
+  const feed = live
+    ? 'NIFTY aur SENSEX ka spot FYERS se live aa raha hai. Price har second update hoti hai.'
+    : fyers
+      ? 'FYERS ki latest price lagi hai. Market band hone par naya tick nahi aata.'
+      : 'Live feed abhi connected nahi hai.'
+
   return (
     <section className="rounded-xl border border-line bg-panel p-4" aria-label="Market kahan move karega">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -39,7 +47,7 @@ export function MoveBoard({
           <h2 className="text-lg font-semibold">NIFTY aur SENSEX ki direction</h2>
         </div>
         <p className="max-w-xl text-xs leading-5 text-muted">
-          Yeh pakka prediction nahi hai. Neeche wale indicators ka score hai. Live feed abhi connected nahi hai.
+          Yeh pakka prediction nahi hai. Neeche wale indicators ka score hai. {feed}
         </p>
       </div>
       {views.some((view) => view.origin === 'fyers') ? null : (

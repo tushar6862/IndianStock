@@ -9,6 +9,10 @@ export interface LiveQuote {
   change: number
   changePercent: number
   time: number
+  /** Day open, high, and low from the FYERS quote, when the feed sends them. */
+  open?: number
+  high?: number
+  low?: number
 }
 
 export type Freshness = 'live' | 'delayed' | 'simulated' | 'historical' | 'unavailable'

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { fetchFyersCandles } from '../services/marketData/fyersClient.ts'
+import { fetchFyersCandles, fetchFyersQuotes } from '../services/marketData/fyersClient.ts'
+import { mergeQuote } from '../services/marketData/mergeQuote.ts'
 import { parseCandleFile } from '../services/marketData/parseCandles.ts'
 import { generateSampleCandles, sampleSourceLabel } from '../services/marketData/sampleData.ts'
 import type { Candle, DataOrigin, Freshness, IndicatorSettings, IndicatorVisibility, InstrumentId, LiveQuote, Timeframe } from '../types/market.ts'
@@ -35,6 +36,7 @@ interface MarketState {
   setVisibility: (visibility: Partial<IndicatorVisibility>) => void
   loadSample: () => void
   loadFyers: (options?: { quiet?: boolean }) => Promise<void>
+  applyTicks: () => Promise<void>
   disconnect: () => void
   importFile: (text: string, fileName: string) => void
   refresh: () => void
@@ -222,6 +224,28 @@ export const useMarketStore = create<MarketState>()(
               ? current.banner
               : { tone: 'info', message: 'FYERS data loaded. These prices come from your FYERS account.' },
         })
+      },
+      applyTicks: async () => {
+        const current = get()
+        if (current.origins.NIFTY50 !== 'fyers' && current.origins.SENSEX !== 'fyers') return
+        const payload = await fetchFyersQuotes()
+        const now = Math.floor(Date.now() / 1000)
+        const quotes = { ...get().quotes }
+        const freshness = { ...get().freshness }
+        const series = { ...get().series }
+        const sourceLabels = { ...get().sourceLabels }
+        for (const id of ['NIFTY50', 'SENSEX'] as const) {
+          const row = payload[id]
+          if (!row?.quote || get().origins[id] !== 'fyers') continue
+          const live = row.freshness === 'live'
+          const quote =
+            live && Math.abs(now - row.quote.time) > 180 ? { ...row.quote, time: now } : row.quote
+          quotes[id] = quote
+          freshness[id] = row.freshness
+          series[id] = mergeQuote(get().series[id], quote, { live, now })
+          if (row.sourceLabel) sourceLabels[id] = row.sourceLabel
+        }
+        set({ quotes, freshness, series, sourceLabels })
       },
       dismissBanner: () => set({ banner: null }),
     }),
